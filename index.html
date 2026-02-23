@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angkringan SteamX | Dev SteamX</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-main: #1e1e24;
+            --bg-card: #25252b;
+            --purple-neon: #9d4edd;
+            --green-neon: #39ff14;
+            --text-main: #f0f0f0;
+            --text-muted: #a0a0a0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 0; overflow-x: hidden;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 5%; background: #18181c; border-bottom: 2px solid var(--purple-neon);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .logo { font-family: 'Orbitron', sans-serif; color: var(--green-neon); font-size: 1.8rem; text-decoration: none; font-style: italic; }
+        .nav-right { display: flex; align-items: center; gap: 20px; }
+        .nav-btn { background: #2d2d35; border: 1px solid #444; color: #fff; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .cart-badge { background: red; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; font-weight: bold; margin-left: 5px; }
+
+        /* BERANDA AWAL */
+        #home-page { display: block; padding-bottom: 50px; }
+        .hero-section { display: flex; gap: 20px; padding: 30px 5%; max-width: 1400px; margin: auto; flex-wrap: wrap; }
+        
+        .recommendation-box { 
+            flex: 1; min-width: 350px; background: var(--bg-card); 
+            border: 2px solid var(--purple-neon); border-radius: 15px; padding: 20px;
+            display: flex; align-items: center; gap: 20px; position: relative;
+        }
+        .recommendation-box img { width: 100px; height: 100px; border-radius: 10px; object-fit: cover; }
+        .btn-lihat-rec { position: absolute; right: 20px; color: var(--purple-neon); font-weight: bold; text-decoration: none; cursor: pointer; }
+        
+        .banner-box { flex: 1; min-width: 350px; height: 180px; border-radius: 15px; border: 2px solid var(--purple-neon); overflow: hidden; position: relative; }
+        .banner-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        .catalog-container { padding: 0 5%; max-width: 1400px; margin: auto; }
+        .section-title { border-left: 5px solid var(--green-neon); padding-left: 10px; font-size: 1.4rem; font-weight: bold; margin: 40px 0 25px 0; text-transform: uppercase; }
+
+        /* GRID GAMES */
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+        .game-card { background: var(--bg-card); border-radius: 12px; overflow: hidden; border: 2px solid transparent; transition: 0.3s; cursor: pointer; position: relative; }
+        .game-card:hover { border-color: var(--purple-neon); transform: translateY(-5px); }
+        .game-card img { width: 100%; height: 200px; object-fit: cover; }
+        .game-card-body { padding: 15px; }
+        .game-card-body h3 { margin: 0 0 10px 0; font-size: 1rem; }
+        .price-tag { display: flex; flex-direction: column; }
+        .old-p { color: #ff4d4d; text-decoration: line-through; font-size: 0.8rem; }
+        .new-p { color: var(--green-neon); font-weight: bold; font-size: 1.1rem; }
+        
+        .btn-add-cart { position: absolute; bottom: 15px; right: 15px; background: var(--purple-neon); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
+
+        /* DETAIL PAGE */
+        #detail-page { display: none; position: fixed; inset: 0; background: var(--bg-main); z-index: 2000; overflow-y: auto; padding-bottom: 50px; }
+        .detail-header { position: sticky; top: 0; background: #18181c; padding: 15px 5%; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #333; z-index: 10; }
+        .back-btn { font-size: 1.5rem; cursor: pointer; color: var(--green-neon); }
+        .detail-content { max-width: 900px; margin: auto; padding: 20px 5%; }
+        .detail-hero-img { width: 100%; height: 450px; object-fit: cover; border-radius: 20px; border: 2px solid var(--purple-neon); margin-bottom: 30px; }
+        .detail-desc { line-height: 1.8; color: var(--text-muted); font-size: 1.1rem; margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; white-space: pre-line; }
+        .btn-go-pay { background: var(--green-neon); color: #000; padding: 20px 60px; border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 1.3rem; display: inline-block; transition: 0.3s; margin-top: 50px; }
+
+        /* MODAL GLOBAL */
+        .custom-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; align-items: center; justify-content: center; padding: 20px; }
+        .admin-box { width: 100%; max-width: 600px; background: var(--bg-card); padding: 30px; border-radius: 15px; border: 1px solid var(--purple-neon); max-height: 90vh; overflow-y: auto; }
+        .admin-box input, .admin-box textarea, .admin-box select { width: 100%; padding: 12px; margin-bottom: 15px; background: #18181c; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
+        
+        #toast { position: fixed; bottom: 30px; right: 30px; background: var(--purple-neon); color: white; padding: 15px 25px; border-radius: 10px; display: none; z-index: 9999; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        footer { text-align: center; padding: 60px 0; color: #444; }
+    </style>
+</head>
+<body>
+
+<div id="toast">Tersimpan!</div>
+
+<div id="cart-modal" class="custom-overlay">
+    <div class="admin-box" style="max-width: 450px;">
+        <h2 style="color:var(--purple-neon)">Daftar Keranjang</h2>
+        <div id="cart-list" style="margin-bottom: 20px; border-top: 1px solid #444; padding-top: 10px;">
+            </div>
+        <button class="nav-btn" onclick="closeModal('cart-modal')" style="width:100%; background:var(--green-neon); border:none; color:black; font-weight:bold; padding:15px;">KEMBALI BELANJA</button>
+    </div>
+</div>
+
+<div id="login-modal" class="custom-overlay">
+    <div class="admin-box" style="text-align: center; max-width: 400px;">
+        <h2 style="color:var(--green-neon); font-family: Orbitron;">ADMIN ACCESS</h2>
+        <input type="password" id="admin-pass" placeholder="Masukkan Password Admin">
+        <button class="nav-btn" onclick="checkPass()" style="width:100%; background:var(--purple-neon); border:none; color:white; padding:15px;">MASUK</button>
+        <button onclick="closeModal('login-modal')" style="background:none; border:none; color:grey; margin-top:15px; cursor:pointer;">Batal</button>
+    </div>
+</div>
+
+<nav class="navbar">
+    <a href="#" class="logo">Angkringan SteamX</a>
+    <div class="nav-right">
+        <a href="#" id="help-link" target="_blank" class="nav-btn"><i class="fas fa-headset"></i> Bantuan</a>
+        <div class="nav-btn" onclick="openCart()"><i class="fas fa-shopping-cart"></i> Keranjang <span class="cart-badge" id="cart-count">0</span></div>
+    </div>
+</nav>
+
+<div id="home-page">
+    <div class="hero-section">
+        <div class="recommendation-box" id="rec-display">
+            <img src="" id="rec-thumb">
+            <div>
+                <div style="color:var(--purple-neon); font-weight:bold; font-size:0.8rem;">RECOMMENDATION</div>
+                <div id="rec-name" style="font-weight:bold; font-size:1.1rem;">Loading...</div>
+            </div>
+            <div class="btn-lihat-rec" id="rec-link">LIHAT <i class="fas fa-arrow-right"></i></div>
+        </div>
+        <div class="banner-box">
+            <img id="main-banner" src="https://wallpaperaccess.com/full/1892751.jpg">
+        </div>
+    </div>
+
+    <div class="catalog-container">
+        <div class="section-title">Bundling Games</div>
+        <div class="game-grid" id="bundle-grid"></div>
+
+        <div class="section-title">Category games</div>
+        <div class="game-grid" id="category-grid"></div>
+    </div>
+</div>
+
+<div id="detail-page">
+    <div class="detail-header"><div class="back-btn" onclick="closeDetailPage()"><i class="fas fa-arrow-left"></i> Kembali</div></div>
+    <div class="detail-content">
+        <img id="det-img" class="detail-hero-img">
+        <h1 id="det-title" style="margin:0"></h1>
+        <div style="margin:20px 0">
+            <span id="det-price" style="color:var(--green-neon); font-size:2rem; font-weight:bold;"></span>
+            <span id="det-old" style="color:red; text-decoration:line-through; margin-left:15px;"></span>
+        </div>
+        <div id="det-desc" class="detail-desc"></div>
+        <center><a href="#" id="det-pay-link" target="_blank" class="btn-go-pay">GO TO PAYMENT</a></center>
+    </div>
+</div>
+
+<div id="admin-modal" class="custom-overlay">
+    <div class="admin-box">
+        <h2 style="color:var(--green-neon)">Admin Panel</h2>
+        <input type="text" id="adm-banner" placeholder="URL Banner Utama">
+        <input type="text" id="adm-help" placeholder="URL Link Bantuan">
+        <hr style="border-color:#333">
+        <h3>Tambah Game</h3>
+        <select id="adm-cat">
+            <option value="category">Category Games</option>
+            <option value="bundle">Bundling Games</option>
+        </select>
+        <input type="text" id="adm-name" placeholder="Nama Game">
+        <input type="text" id="adm-price" placeholder="Harga Diskon (Rp 20.000)">
+        <input type="text" id="adm-old" placeholder="Harga Asli (Rp 150.000)">
+        <input type="text" id="adm-img" placeholder="Link Gambar Game">
+        <textarea id="adm-desc" rows="3" placeholder="Deskripsi..."></textarea>
+        <input type="text" id="adm-pay" placeholder="Link Saweria">
+        
+        <h3>Set Rekomendasi</h3>
+        <select id="adm-rec-select"></select>
+
+        <h3>Hapus Game</h3>
+        <div id="delete-list" style="background:#111; padding:10px; border-radius:5px;"></div>
+
+        <button class="nav-btn" onclick="saveAdmin()" style="width:100%; background:var(--purple-neon); color:white; padding:15px; border:none; margin-top:20px;">SIMPAN SEMUA</button>
+        <button onclick="closeModal('admin-modal')" style="width:100%; background:none; border:none; color:#666; margin-top:10px; cursor:pointer;">Tutup</button>
+    </div>
+</div>
+
+<footer><span onclick="openLogin()" style="cursor:pointer">Made In IDN | Dev Is SteamX</span></footer>
+
+<script>
+    // --- KONEKSI FIREBASE (DATABASE AWAN) ---
+    const firebaseConfig = {
+        databaseURL: "https://angkringansteamx-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Database lokal sementara (sinkron dengan Firebase)
+    let games = [];
+    let myCart = []; 
+    let recId = null;
+
+    // AMBIL DATA DARI FIREBASE SECARA REALTIME
+    db.ref('steamx_data').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            // Jika data ada, masukkan ke variabel games
+            games = data.games ? Object.values(data.games) : [];
+            recId = data.recId || (games[0] ? games[0].id : null);
+            
+            // Update Banner & Help Link jika ada di database
+            if (data.banner) document.getElementById('main-banner').src = data.banner;
+            if (data.help) document.getElementById('help-link').href = data.help;
+            
+            renderGames();
+        }
+    });
+
+    function renderGames() {
+        const catGrid = document.getElementById('category-grid');
+        const bunGrid = document.getElementById('bundle-grid');
+        const recSelect = document.getElementById('adm-rec-select');
+        const delList = document.getElementById('delete-list');
+        
+        catGrid.innerHTML = ''; bunGrid.innerHTML = ''; recSelect.innerHTML = ''; delList.innerHTML = '';
+
+        games.forEach((g) => {
+            const html = `
+                <div class="game-card" onclick="openDetailPage(${g.id})">
+                    <img src="${g.img}">
+                    <div class="game-card-body">
+                        <h3>${g.name}</h3>
+                        <div class="price-tag"><span class="old-p">${g.old}</span><span class="new-p">${g.price}</span></div>
+                    </div>
+                    <button class="btn-add-cart" onclick="addToCart(event, ${g.id})"><i class="fas fa-plus"></i></button>
+                </div>`;
+            
+            if(g.cat === 'bundle') bunGrid.innerHTML += html;
+            else catGrid.innerHTML += html;
+
+            recSelect.innerHTML += `<option value="${g.id}" ${recId == g.id ? 'selected' : ''}>${g.name}</option>`;
+            delList.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size: 13px;">${g.name} <button onclick="deleteGame(${g.id})" style="color:red; background:none; border:none; cursor:pointer;">Hapus</button></div>`;
+
+            if(g.id == recId) {
+                document.getElementById('rec-thumb').src = g.img;
+                document.getElementById('rec-name').innerText = g.name;
+                document.getElementById('rec-link').onclick = () => openDetailPage(g.id);
+            }
+        });
+    }
+
+    // FUNGSI KERANJANG
+    function addToCart(e, id) {
+        e.stopPropagation();
+        const gameDipilih = games.find(x => x.id == id);
+        if(gameDipilih) {
+            myCart.push(gameDipilih);
+            document.getElementById('cart-count').innerText = myCart.length;
+            showToast(gameDipilih.name + " Masuk Keranjang!");
+        }
+    }
+
+    function openCart() {
+        const cartList = document.getElementById('cart-list');
+        cartList.innerHTML = '';
+        if(myCart.length === 0) {
+            cartList.innerHTML = '<p style="text-align:center; color:grey;">Keranjang Kosong</p>';
+        } else {
+            myCart.forEach((item, index) => {
+                cartList.innerHTML += `
+                <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #333;">
+                    <span>${item.name}</span>
+                    <span style="color:var(--green-neon)">${item.price}</span>
+                </div>`;
+            });
+        }
+        document.getElementById('cart-modal').style.display = 'flex';
+    }
+
+    function openDetailPage(id) {
+        const g = games.find(x => x.id == id);
+        document.getElementById('det-img').src = g.img;
+        document.getElementById('det-title').innerText = g.name;
+        document.getElementById('det-price').innerText = g.price;
+        document.getElementById('det-old').innerText = g.old;
+        document.getElementById('det-desc').innerText = g.desc;
+        document.getElementById('det-pay-link').href = g.pay;
+        document.getElementById('home-page').style.display = 'none';
+        document.getElementById('detail-page').style.display = 'block';
+        window.scrollTo(0,0);
+    }
+
+    function closeDetailPage() {
+        document.getElementById('detail-page').style.display = 'none';
+        document.getElementById('home-page').style.display = 'block';
+    }
+
+    function showToast(m) { 
+        const t = document.getElementById('toast'); 
+        t.innerText = m; 
+        t.style.display = 'block'; 
+        setTimeout(() => t.style.display='none', 2000); 
+    }
+    
+    function openLogin() { document.getElementById('login-modal').style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function checkPass() {
+        if(document.getElementById('admin-pass').value === '210213') {
+            closeModal('login-modal');
+            document.getElementById('admin-modal').style.display = 'flex';
+        } else { alert("Password Salah!"); }
+    }
+
+    // HAPUS DARI FIREBASE
+    function deleteGame(id) {
+        if(confirm("Hapus game ini dari Cloud?")) {
+            db.ref('steamx_data/games/' + id).remove();
+        }
+    }
+
+    // SIMPAN KE FIREBASE
+    function saveAdmin() {
+        const n = document.getElementById('adm-name').value;
+        const banner = document.getElementById('adm-banner').value;
+        const help = document.getElementById('adm-help').value;
+        const selectedRec = document.getElementById('adm-rec-select').value;
+
+        // Update data dasar
+        if(banner) db.ref('steamx_data/banner').set(banner);
+        if(help) db.ref('steamx_data/help').set(help);
+        if(selectedRec) db.ref('steamx_data/recId').set(selectedRec);
+
+        // Tambah game baru jika ada nama yang diisi
+        if(n) {
+            const newId = Date.now();
+            const newGame = {
+                id: newId,
+                cat: document.getElementById('adm-cat').value,
+                name: n,
+                price: document.getElementById('adm-price').value,
+                old: document.getElementById('adm-old').value,
+                img: document.getElementById('adm-img').value,
+                desc: document.getElementById('adm-desc').value,
+                pay: document.getElementById('adm-pay').value
+            };
+            db.ref('steamx_data/games/' + newId).set(newGame);
+        }
+
+        showToast("Cloud Berhasil Diperbarui!");
+        closeModal('admin-modal');
+    }
+</script>
+</body>
+</html>
